@@ -1,0 +1,60 @@
+# Comments are provided throughout this file to help you get started.
+# If you need more help, visit the Docker Compose reference guide at
+# https://docs.docker.com/go/compose-spec-reference/
+
+# Here the instructions define your application as a service called "server".
+# This service is built from the Dockerfile in the current directory.
+# You can add other services your application may depend on here, such as a
+# database or a cache. For examples, see the Awesome Compose repository:
+# https://github.com/docker/awesome-compose
+services:
+  postgres:
+    image: postgres:16
+    ports:
+     - "5432:5432"
+    environment:
+      POSTGRES_USER: events
+      POSTGRES_PASSWORD: events
+      POSTGRES_DB: events
+    volumes:
+     - ./db/events.sql:/docker-entrypoint-initdb.d/events.sql:ro
+     - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U events -d events"]   
+      interval: 5s
+      timeout: 5s
+      retries: 10     
+  
+  localstack:
+    image: localstack/localstack:4.12
+    ports:
+     - "4566:4566"  
+    environment:
+      SERVICES: sqs
+    volumes:
+     - ./localstack/create-queues.sh:/etc/localstack/init/ready.d/create-queues.sh:ro
+    healthcheck:
+      test: ["CMD", "awslocal", "sqs", "get-queue-url", "--queue-name", "events-queue"]   
+      interval: 5s
+      timeout: 5s
+      retries: 20   
+
+  processor:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy   
+    environment:
+      SQS_ENDPOINT_URL: http://localstack:4566
+      SQS_QUEUE_NAME: events-queue
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
+      DATABASE_URL: postgresql://events:events@postgres:5432/events
+      SCHEMAS_DIR: /app/schemas
+    stop_grace_period: 15s
+
+volumes:
+  pg-data:

@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "transaction.authorized v1",
+  "type": "object",
+  "required": ["account_id", "amount"],
+  "properties": {
+    "account_id": { "type": "string", "minLength": 1 },
+    "amount": { "type": "integer", "minimum": 1 }
+  }
+}

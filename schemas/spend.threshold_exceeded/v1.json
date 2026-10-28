@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "spend.threshold_exceeded v1",
+  "type": "object",
+  "required": ["account_id", "amount", "threshold"],
+  "properties": {
+    "account_id": { "type": "string", "minLength": 1 },
+    "amount": { "type": "integer", "minimum": 1 },
+    "threshold": { "type": "integer", "minimum": 1 }
+  }
+}
